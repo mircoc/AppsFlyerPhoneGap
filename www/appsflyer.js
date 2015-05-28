@@ -35,6 +35,18 @@
             data = JSON.parse(conversionData);
         }
 		global.plugins.appsFlyer._conversionData = data;
+
+		if (global.plugins.appsFlyer._cbFuncConversionData) {
+        	global.plugins.appsFlyer._cbFuncConversionData(global.plugins.appsFlyer._conversionData);
+		}
+	};
+	
+	AppsFlyer.prototype.setCallbackConversionData = function(callbackFn) {
+        global.plugins.appsFlyer._cbFuncConversionData = callbackFn;
+
+        if (global.plugins.appsFlyer._conversionData) {
+        	global.plugins.appsFlyer._cbFuncConversionData(global.plugins.appsFlyer._conversionData);
+        }
 	};
 
 	global.cordova.addConstructor(function() {

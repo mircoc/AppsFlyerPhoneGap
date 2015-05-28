@@ -57,7 +57,7 @@
         <source-file src="platform/android/com/appsflyer/cordova/plugin/AppsFlyerPlugin.java" target-dir="src/com/appsflyer/cordova/plugin" />
         <source-file src="platform/android/libs/AF-Android-SDK-v2.3.1.16.jar" target-dir="libs"/>
 
-        <dependency id="com.google.playservices" version="22.0.0" />
+        <framework src="com.google.android.gms:play-services:6.5.87" />
     </platform>
 
     <!-- ios -->
