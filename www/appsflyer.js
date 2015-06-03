@@ -5,7 +5,11 @@
 	};
 
 	AppsFlyer.prototype.initSdk = function (args) {
-    	cordova.exec(null, null, "AppsFlyerPlugin", "initSdk", args);
+		var self = this;
+    	cordova.exec(
+    		function(conversionData) {
+    			self.onInstallConversionDataLoaded(conversionData);
+    		}, null, "AppsFlyerPlugin", "initSdk", args);
 	};
 	
 	AppsFlyer.prototype.setCurrencyCode = function (currencyId) {

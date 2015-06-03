@@ -19,9 +19,13 @@ import android.content.Context;
 import android.util.Log;
 
 public class AppsFlyerPlugin extends CordovaPlugin {
-	
+
+	private static final String TAG = "AppsFlyerPlugin";
+	private static CallbackContext context;
+
 	@Override
 	public boolean execute(final String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
+		context = callbackContext;
 		if("setCurrencyCode".equals(action))
 		{
 			setCurrencyCode(args);
@@ -57,12 +61,14 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 			devKey = parameters.getString(0);
 			if(devKey != null){
 				AppsFlyerLib.setAppsFlyerKey(devKey);
-				initListener();
+				initListener(callbackContext);
 			}
 		}
 		catch (JSONException e) 
 		{
 			e.printStackTrace();
+			Log.e(TAG, "error on initSdk", e);
+			callbackContext.error(e.getMessage());
 			return;
 		}
     	
@@ -81,12 +87,12 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 
 			@Override
 			public void onInstallConversionDataLoaded(Map<String, String> conversionData) {
-				final String json = new JSONObject(conversionData).toString();
-				webView.post(new Runnable() {
-					public void run() {
-						webView.loadUrl("javascript:window.plugins.appsFlyer.onInstallConversionDataLoaded('"+json+"')");
-					}
-				});
+				final JSONObject message = new JSONObject(conversionData);
+				if (context != null) {
+					PluginResult result = new PluginResult(PluginResult.Status.OK, message);
+					result.setKeepCallback(true);
+					context.sendPluginResult(result);
+				}
 			}
 
 			@Override
@@ -99,7 +105,7 @@ public class AppsFlyerPlugin extends CordovaPlugin {
             	
 	}
 	
-	private void initListener() {
+	private void initListener(final CallbackContext callbackContext) {
 		Runnable task = new Runnable() {
 		    public void run() {
 		    	AppsFlyerLib.sendTracking(cordova.getActivity().getApplicationContext());
@@ -107,6 +113,10 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 		};
 		ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
 		worker.schedule(task, 500, TimeUnit.MILLISECONDS);
+
+		PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+		result.setKeepCallback(true);
+		callbackContext.sendPluginResult(result);
 	}
 	
 	private void sendTrackingWithEvent(JSONArray parameters) {
@@ -127,7 +137,7 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 			return;
 		}
 		Context c = this.cordova.getActivity().getApplicationContext();
-		AppsFlyerLib.sendTrackingWithEvent(c,eventName,eventValue);
+		AppsFlyerLib.sendTrackingWithEvent(c, eventName, eventValue);
 	}
 
 
@@ -178,5 +188,12 @@ public class AppsFlyerPlugin extends CordovaPlugin {
     	PluginResult r = new PluginResult(PluginResult.Status.OK, id);
     	r.setKeepCallback(false);
     	callbackContext.sendPluginResult(r);
+	}
+
+	@Override
+	public void onDestroy() {
+		context = null;
+
+		super.onDestroy();
 	}
 }
