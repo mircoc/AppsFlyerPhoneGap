@@ -24,8 +24,7 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 	private static CallbackContext context;
 
 	@Override
-	public boolean execute(final String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-		context = callbackContext;
+	public boolean execute(final String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException {
 		if("setCurrencyCode".equals(action))
 		{
 			setCurrencyCode(args);
@@ -48,13 +47,19 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 		}
 		else if("initSdk".equals(action))
 		{
-			initSdk(args,callbackContext);
+			cordova.getThreadPool().execute(new Runnable() {
+				@Override
+				public void run() {
+					initSdk(args, callbackContext);
+				}
+			});
 			return true;
 		}
 		return false;
 	}
 	
 	private void initSdk(JSONArray parameters, final CallbackContext callbackContext) {
+		context = callbackContext;
 		String devKey = null;
 		try
 		{
@@ -89,16 +94,28 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 			public void onInstallConversionDataLoaded(Map<String, String> conversionData) {
 				final JSONObject message = new JSONObject(conversionData);
 				if (context != null) {
-					PluginResult result = new PluginResult(PluginResult.Status.OK, message);
-					result.setKeepCallback(true);
-					context.sendPluginResult(result);
+
+					cordova.getActivity().runOnUiThread(
+							new Runnable() {
+								@Override
+								public void run() {
+									PluginResult result = new PluginResult(PluginResult.Status.OK, message);
+									result.setKeepCallback(true);
+									context.sendPluginResult(result);
+								}
+							}
+					);
+
+				} else {
+					Log.w(TAG, "onInstallConversionDataLoaded: context is null");
 				}
 			}
 
 			@Override
 			public void onInstallConversionFailure(String arg0) {
 				// TODO Auto-generated method stub
-				
+				Log.w(TAG, "onInstallConversionFailure: " + arg0);
+				callbackContext.error("onInstallConversionFailure: " + arg0);
 			}
 			
 		});
