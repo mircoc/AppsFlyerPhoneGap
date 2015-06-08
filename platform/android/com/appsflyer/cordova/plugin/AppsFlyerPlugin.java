@@ -115,7 +115,7 @@ public class AppsFlyerPlugin extends CordovaPlugin {
 			public void onInstallConversionFailure(String arg0) {
 				// TODO Auto-generated method stub
 				Log.w(TAG, "onInstallConversionFailure: " + arg0);
-				callbackContext.error("onInstallConversionFailure: " + arg0);
+				context.error("onInstallConversionFailure: " + arg0);
 			}
 			
 		});
