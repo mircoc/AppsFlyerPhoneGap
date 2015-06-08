@@ -3,7 +3,12 @@
 #import "AppsFlyerTracker.h"
 
 
-@interface AppsFlyerPlugin : CDVPlugin <UIApplicationDelegate, AppsFlyerTrackerDelegate>
+@interface AppsFlyerPlugin : CDVPlugin <UIApplicationDelegate, AppsFlyerTrackerDelegate> {
+    NSString *callbackId;
+}
+
+@property (nonatomic, copy) NSString *callbackId;
+
 - (void)setCurrencyCode:(CDVInvokedUrlCommand*)command;
 - (void)setAppUserId:(CDVInvokedUrlCommand*)command;
 - (void)getAppsFlyerUID:(CDVInvokedUrlCommand*)command;

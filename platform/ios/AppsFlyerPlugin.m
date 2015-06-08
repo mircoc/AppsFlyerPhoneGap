@@ -3,6 +3,8 @@
 
 @implementation AppsFlyerPlugin
 
+@synthesize callbackId;
+
 - (CDVPlugin *)initWithWebView:(UIWebView *)theWebView
 {
     self = (AppsFlyerPlugin *)[super initWithWebView:theWebView];
@@ -14,6 +16,17 @@
     if ([command.arguments count] < 2) {
         return;
     }
+    
+    self.callbackId = command.callbackId;
+    
+    [self.commandDelegate runInBackground:^{
+        
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+        // leave communication channel open with keepcallback
+        [pluginResult setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        
+    }];
     
     NSString* devKey = [command.arguments objectAtIndex:0];
     NSString* appId = [command.arguments objectAtIndex:1];
@@ -71,22 +84,34 @@
 }
 
 -(void)onConversionDataReceived:(NSDictionary*) installData {
-    NSError *error;
-    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:installData
-                                            options:0
-                                            error:&error];
-    if (jsonData) {
-        NSString *JSONString = [[NSString alloc] initWithBytes:[jsonData bytes] length:[jsonData length] encoding:NSUTF8StringEncoding];
-        [[super webView] stringByEvaluatingJavaScriptFromString: [NSString stringWithFormat:@"javascript:window.plugins.appsFlyer.onInstallConversionDataLoaded(%@)", JSONString]];
-    } else {
-        NSLog(@"%@",error);
+    
+    if (self.callbackId) {
+        NSLog(@"[AppsFlyer Plugin] onConversionDataReceived: sending plugin result");
+        
+        
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:installData];
+        [result setKeepCallback:[NSNumber numberWithBool:YES]];
+        [self.commandDelegate sendPluginResult:result callbackId:self.callbackId];
+    }
+    else {
+        NSLog(@"[AppsFlyer Plugin] onConversionDataReceived: Error self.callbackId empty");
     }
 }
 
 -(void)onConversionDataRequestFailure:(NSError *) error {
     
-    NSLog(@"%@",error);
+    NSString *errorMessage = [error localizedDescription];
+    NSLog(@"[AppsFlyer Plugin] onConversionDataRequestFailure: %@", [error localizedDescription]);
     
+    if (self.callbackId) {
+        NSLog(@"[AppsFlyer Plugin] onConversionDataRequestFailure: sending error");
+        
+        CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:errorMessage];
+        [self.commandDelegate sendPluginResult:commandResult callbackId:self.callbackId];
+    }
+    else {
+        NSLog(@"[AppsFlyer Plugin] onConversionDataRequestFailure: Error self.callbackId empty");
+    }
 }
 
 @end
